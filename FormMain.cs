@@ -11,6 +11,7 @@ public class FormMain : Form
     private Button btnMenuSoftwares;
     private Button btnMenuTools;
     private Button btnMenuFiscal;
+    private Button btnMenuInfo;
     private Panel panelLateral;
     private Panel panelCentral;
 
@@ -22,6 +23,7 @@ public class FormMain : Form
     private UserControlSoftware userControlSoftware = new UserControlSoftware();
     private UserControlDiagnostics userControlDiagnostics = new UserControlDiagnostics();
     private UserControlDiagnosticsTech userControlDiagnosticsTech;
+    private UserControlInfo userControlInfo = new UserControlInfo();
 
     // Cores do tema
     private Color corAzul = ColorTranslator.FromHtml("#1A377B");
@@ -125,27 +127,29 @@ public class FormMain : Form
     private void InitializeComponent()
     {
         this.Text = "Central de Software";
-        this.Width = 950;
+        this.Width = 1000;
         this.Height = 700;
         this.FormBorderStyle = FormBorderStyle.FixedDialog;
         this.MaximizeBox = false;
         this.MinimizeBox = true;
         this.StartPosition = FormStartPosition.CenterScreen;
-        this.MaximumSize = new Size(950, 700);
-        this.MinimumSize = new Size(950, 700);
+        this.MaximumSize = new Size(1000, 700);
+        this.MinimumSize = new Size(1000, 700);
 
         // Menu superior
         panelMenuSuperior = new Panel { Height = 80, Dock = DockStyle.Top, BackColor = corCinza };
-        btnMenuInicio = CriarBotaoMenu("  Início", ResourceImages.GetImage("home.png"), 20, 10, OnMenuClick, "inicio");
-        btnMenuSoftwares = CriarBotaoMenu("  Softwares", ResourceImages.GetImage("software.png"), 220, 10, OnMenuClick, "softwares");
-        btnMenuTools = CriarBotaoMenu("  Tools", ResourceImages.GetImage("tools.png"), 420, 10, OnMenuClick, "tools");
-        btnMenuFiscal = CriarBotaoMenu("  Fiscal", ResourceImages.GetImage("fiscal.png"), 620, 10, OnMenuClick, "fiscal");
+        btnMenuInicio = CriarBotaoMenu("  Início", ResourceImages.GetImage("home.png"), 20, 10, OnMenuClick, "inicio", 140);
+        btnMenuSoftwares = CriarBotaoMenu("  Softwares", ResourceImages.GetImage("software.png"), 170, 10, OnMenuClick, "softwares", 140);
+        btnMenuTools = CriarBotaoMenu("  Tools", ResourceImages.GetImage("tools.png"), 320, 10, OnMenuClick, "tools", 140);
+        btnMenuFiscal = CriarBotaoMenu("  Fiscal", ResourceImages.GetImage("fiscal.png"), 470, 10, OnMenuClick, "fiscal", 140);
+        btnMenuInfo = CriarBotaoMenu("  Informações", ResourceImages.GetImage("info.png"), 620, 10, OnMenuClick, "info", 170);
 
         panelMenuSuperior.Controls.AddRange(new Control[] {
             btnMenuInicio,
             btnMenuSoftwares,
             btnMenuTools,
-            btnMenuFiscal
+            btnMenuFiscal,
+            btnMenuInfo
         });
 
         // Painel lateral e central
@@ -162,14 +166,14 @@ public class FormMain : Form
         btnMenuInicio.ForeColor = corBranco;
     }
 
-    private Button CriarBotaoMenu(string texto, Image icone, int left, int top, EventHandler click, string tag)
+    private Button CriarBotaoMenu(string texto, Image icone, int left, int top, EventHandler click, string tag, int largura = 180)
     {
         var btn = new Button
         {
             Text = texto,
             TextAlign = ContentAlignment.MiddleRight,
             ImageAlign = ContentAlignment.MiddleLeft,
-            Width = 180,
+            Width = largura,
             Height = 60,
             FlatStyle = FlatStyle.Flat,
             Font = new Font("Segoe UI", 11, FontStyle.Bold),
@@ -312,6 +316,10 @@ public class FormMain : Form
                 btnFiscal.Click += (s, e) => ShowCentralContent(userControlFiscalXmlEditor);
                 panelLateral.Controls.Add(btnFiscal);
                 ShowCentralContent(userControlFiscalXmlEditor);
+                break;
+
+            case "info":
+                ShowCentralContent(userControlInfo);
                 break;
         }
     }
