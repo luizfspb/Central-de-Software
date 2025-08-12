@@ -84,6 +84,9 @@
     <Compile Include="UserControlHome.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="UserControlInfo.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="UserControlSoftware.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -104,6 +107,7 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <None Include="LICENSE" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -114,11 +118,13 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <None Include="README.md" />
+    <None Include="SECURITY.md" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include=".gitattributes" />
     <Content Include="central.ico" />
     <EmbeddedResource Include="softwares\VisualizadorApollo.exe" />
   </ItemGroup>
