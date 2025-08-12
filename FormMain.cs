@@ -29,7 +29,7 @@ public class FormMain : Form
     private Color corBranco = Color.White;
     private Color corCinza = Color.WhiteSmoke;
 
-    private const string senhaTecnico = "1212";
+    public static string senhaTecnico = "1212";  // Alterado para public static para permitir alteração
 
     public FormMain()
     {
