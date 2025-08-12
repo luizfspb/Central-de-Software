@@ -9,6 +9,7 @@ namespace Central_de_Software
         private Panel panelMenuSuperior;
         private Button btnVoltar;
         private Button btnTools;
+        private Button btnAlterarSenha;
         private Panel panelLateral;
         private Panel panelCentral;
         private UserControlTools userControlTools;
@@ -33,10 +34,11 @@ namespace Central_de_Software
             this.MaximumSize = new Size(950, 700);
             this.MinimumSize = new Size(950, 700);
             this.BackColor = Color.FromArgb(30, 30, 30);
-            this.FormClosing += (s, e) => Application.Exit();
 
             // Menu superior
             panelMenuSuperior = new Panel { Height = 80, Dock = DockStyle.Top, BackColor = Color.FromArgb(40, 40, 40) };
+            
+            // Botão Voltar
             btnVoltar = new Button
             {
                 Text = "  Voltar",
@@ -53,9 +55,10 @@ namespace Central_de_Software
             };
             btnVoltar.FlatAppearance.BorderSize = 0;
             btnVoltar.FlatAppearance.MouseOverBackColor = Color.FromArgb(80, 80, 80);
-            btnVoltar.Click += (s, e) => this.Close();
+            btnVoltar.Click += (s, e) => this.Hide();
             panelMenuSuperior.Controls.Add(btnVoltar);
 
+            // Botão Tools
             btnTools = new Button
             {
                 Text = "  Tools",
@@ -75,7 +78,27 @@ namespace Central_de_Software
             btnTools.Click += (s, e) => ShowCentralContentTools();
             panelMenuSuperior.Controls.Add(btnTools);
 
-            // Painel lateral (menu)
+            // Botão Alterar Senha
+            btnAlterarSenha = new Button
+            {
+                Text = "  Alterar Senha",
+                Width = 180,
+                Height = 60,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                ImageAlign = ContentAlignment.MiddleLeft,
+                TextAlign = ContentAlignment.MiddleRight,
+                Location = new Point(420, 10),
+                BackColor = Color.FromArgb(60, 60, 60),
+                ForeColor = Color.White,
+                TabStop = false
+            };
+            btnAlterarSenha.FlatAppearance.BorderSize = 0;
+            btnAlterarSenha.FlatAppearance.MouseOverBackColor = Color.FromArgb(80, 80, 80);
+            btnAlterarSenha.Click += (s, e) => AlterarSenhaTecnico();
+            panelMenuSuperior.Controls.Add(btnAlterarSenha);
+
+            // Painel lateral
             panelLateral = new Panel { Width = 220, Dock = DockStyle.Left, BackColor = Color.FromArgb(40, 40, 40) };
             var btnToolsMenu = new Button
             {
@@ -105,8 +128,94 @@ namespace Central_de_Software
             this.Controls.Add(panelLateral);
             this.Controls.Add(panelMenuSuperior);
 
-            // Exibe Tools por padrão
             ShowCentralContentTools();
+        }
+
+        private void AlterarSenhaTecnico()
+        {
+            using (var form = new Form
+            {
+                Width = 350,
+                Height = 220,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                StartPosition = FormStartPosition.CenterParent,
+                Text = "Alterar Senha do Modo Técnico",
+                BackColor = Color.FromArgb(30, 30, 30)
+            })
+            {
+                var txtSenhaAtual = new TextBox
+                {
+                    Left = 20,
+                    Top = 40,
+                    Width = 290,
+                    UseSystemPasswordChar = true,
+                    BackColor = Color.FromArgb(45, 45, 45),
+                    ForeColor = Color.White
+                };
+
+                var txtNovaSenha = new TextBox
+                {
+                    Left = 20,
+                    Top = 90,
+                    Width = 290,
+                    UseSystemPasswordChar = true,
+                    BackColor = Color.FromArgb(45, 45, 45),
+                    ForeColor = Color.White
+                };
+
+                var btnConfirmar = new Button
+                {
+                    Text = "Confirmar",
+                    Left = 125,
+                    Top = 130,
+                    Width = 100,
+                    DialogResult = DialogResult.OK,
+                    BackColor = Color.FromArgb(60, 60, 60),
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat
+                };
+                btnConfirmar.FlatAppearance.BorderSize = 0;
+
+                var lblSenhaAtual = new Label
+                {
+                    Text = "Senha atual:",
+                    Left = 20,
+                    Top = 20,
+                    AutoSize = true,
+                    ForeColor = Color.White
+                };
+
+                var lblNovaSenha = new Label
+                {
+                    Text = "Nova senha:",
+                    Left = 20,
+                    Top = 70,
+                    AutoSize = true,
+                    ForeColor = Color.White
+                };
+
+                form.Controls.AddRange(new Control[] { txtSenhaAtual, txtNovaSenha, btnConfirmar, lblSenhaAtual, lblNovaSenha });
+                form.AcceptButton = btnConfirmar;
+                txtSenhaAtual.Focus();
+
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    if (txtSenhaAtual.Text != FormMain.senhaTecnico)
+                    {
+                        MessageBox.Show("Senha atual incorreta!", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(txtNovaSenha.Text))
+                    {
+                        MessageBox.Show("A nova senha não pode estar em branco!", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    FormMain.senhaTecnico = txtNovaSenha.Text;
+                    MessageBox.Show("Senha alterada com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
         }
 
         private void ShowCentralContentTools()
