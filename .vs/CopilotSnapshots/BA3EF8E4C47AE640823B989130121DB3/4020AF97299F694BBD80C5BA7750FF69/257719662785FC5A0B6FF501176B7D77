@@ -1,0 +1,19 @@
+﻿using System.Drawing;
+using System.Reflection;
+
+namespace Central_de_Software.Utilities
+{
+    public static class ResourceImages
+    {
+        public static Image GetImage(string resourceName)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            using (var stream = assembly.GetManifestResourceStream($"Central_de_Software.Resources.{resourceName}"))
+            {
+                if (stream == null)
+                    return null;
+                return Image.FromStream(stream);
+            }
+        }
+    }
+}

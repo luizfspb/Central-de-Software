@@ -1,0 +1,39 @@
+﻿# Central de Software
+
+Central de Software é uma aplicação Windows Forms desenvolvida em C# (.NET Framework 4.8) para facilitar a instalação, manutenção e otimização de computadores Windows em ambientes corporativos ou técnicos.
+
+## Funcionalidades
+
+- Instalação e desinstalação de softwares populares (AnyDesk, Google Chrome, WinRAR, WhatsApp Desktop, Adobe Acrobat Reader, Revo Uninstaller, Office 365, Visualizador Apollo, 3uTools).
+- Execução de ferramentas de otimização do Windows (limpeza de arquivos temporários, desabilitar serviços, restaurar mapeamentos de rede, etc).
+- Acesso a funções administrativas e técnicas com modo protegido por senha.
+- Interface moderna, intuitiva e responsiva.
+- Suporte a execução de programas como administrador de domínio.
+- Instalação de softwares a partir de recursos embutidos (embedded resources).
+
+## Como usar
+
+1. Compile o projeto no Visual Studio (requer .NET Framework 4.8).
+2. Execute o aplicativo.
+3. Utilize o menu lateral para acessar as áreas de Softwares, Tools, Fiscal e Diagnóstico.
+4. Para acessar o modo técnico, pressione `Ctrl+T` e insira a senha (padrão: 1212).
+
+## Estrutura do Projeto
+
+- **UserControlSoftware.cs**: Interface para instalação/desinstalação de softwares.
+- **UserControlSoftwareFunction.cs**: Lógica de instalação/desinstalação e execução de softwares.
+- **UserControlTools.cs**: Ferramentas de otimização do Windows.
+- **UserControl3uTools.cs**: Acesso rápido ao 3uTools.
+- **FormMain.cs**: Tela principal e navegação.
+- **FormTecnico.cs**: Tela do modo técnico.
+- **Utilities/**: Utilitários para recursos e instalação de softwares.
+
+## Observações
+
+- Para softwares portáteis (ex: Visualizador Apollo), o botão apenas extrai e executa o arquivo, sem instalação/desinstalação.
+- Certifique-se de que todos os executáveis estejam na pasta `softwares` do projeto e marcados como **Embedded Resource**.
+- O Visualizador Apollo e outros softwares portáteis não exibem botão de desinstalação.
+
+## Licença
+
+Este projeto é privado e de uso interno.

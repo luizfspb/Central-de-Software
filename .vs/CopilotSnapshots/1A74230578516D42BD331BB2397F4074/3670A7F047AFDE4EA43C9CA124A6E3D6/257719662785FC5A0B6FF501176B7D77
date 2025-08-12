@@ -1,0 +1,27 @@
+﻿using System.Drawing;
+using System.Reflection;
+
+namespace Central_de_Software.Utilities
+{
+    public static class ResourceImages
+    {
+        public static Image GetImage(string resourceName)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            // Tenta .png primeiro, depois .ico
+            string[] tryNames = {
+                $"Central_de_Software.Resources.{resourceName.Replace(".ico", ".png")}",
+                $"Central_de_Software.Resources.{resourceName}"
+            };
+            foreach (var name in tryNames)
+            {
+                using (var stream = assembly.GetManifestResourceStream(name))
+                {
+                    if (stream != null)
+                        return Image.FromStream(stream);
+                }
+            }
+            return null;
+        }
+    }
+}

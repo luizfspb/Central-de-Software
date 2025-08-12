@@ -1,0 +1,10 @@
+C:\Central de Software\bin\Release\Central de Software.exe.config
+C:\Central de Software\bin\Release\Central de Software.exe
+C:\Central de Software\bin\Release\Central de Software.pdb
+C:\Central de Software\obj\Release\Central de Software.csproj.AssemblyReference.cache
+C:\Central de Software\obj\Release\Central_de_Software.Properties.Resources.resources
+C:\Central de Software\obj\Release\Central de Software.csproj.GenerateResource.cache
+C:\Central de Software\obj\Release\Central de Software.csproj.CoreCompileInputs.cache
+C:\Central de Software\obj\Release\Central de Software.exe
+C:\Central de Software\obj\Release\Central de Software.pdb
+C:\Central de Software\obj\Release\Central de Software.exe.config

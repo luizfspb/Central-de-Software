@@ -1,0 +1,67 @@
+﻿using System;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
+
+namespace Central_de_Software
+{
+    public static class SoftwareInstaller
+    {
+        /// <summary>
+        /// Installs software from an embedded resource
+        /// </summary>
+        /// <param name="resourceName">Full name of the embedded resource (e.g., "Central_de_Software.Resources.AnyDesk.exe")</param>
+        /// <param name="temporaryFileName">Name for the temporary file (e.g., "anydesk_installer.exe")</param>
+        /// <param name="arguments">Optional command line arguments for silent installation</param>
+        /// <returns>True if installation process was started successfully, false otherwise</returns>
+        public static bool InstallFromEmbedded(string resourceName, string temporaryFileName, string arguments = "")
+        {
+            try
+            {
+                // Get the current assembly
+                Assembly assembly = Assembly.GetExecutingAssembly();
+
+                // Get the embedded resource stream
+                using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+                {
+                    if (stream == null)
+                    {
+                        throw new ArgumentException($"Resource '{resourceName}' not found in the assembly.");
+                    }
+
+                    // Create the full path for the temporary file
+                    string tempPath = Path.Combine(Path.GetTempPath(), temporaryFileName);
+
+                    // Ensure the temporary file doesn't exist
+                    if (File.Exists(tempPath))
+                    {
+                        File.Delete(tempPath);
+                    }
+
+                    // Copy the embedded resource to the temporary file
+                    using (FileStream fileStream = File.Create(tempPath))
+                    {
+                        stream.CopyTo(fileStream);
+                    }
+
+                    // Start the installation process
+                    ProcessStartInfo startInfo = new ProcessStartInfo
+                    {
+                        FileName = tempPath,
+                        Arguments = arguments,
+                        UseShellExecute = true, // Required for elevated privileges
+                        Verb = "runas" // Run as administrator
+                    };
+
+                    Process.Start(startInfo);
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log or handle the error appropriately
+                throw new Exception($"Failed to install {temporaryFileName}: {ex.Message}", ex);
+            }
+        }
+    }
+}

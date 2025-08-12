@@ -1,0 +1,143 @@
+﻿using System;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
+using System.Threading.Tasks;
+
+namespace Central_de_Software
+{
+    public static class SoftwareInstaller
+    {
+        /// <summary>
+        /// Installs software from an embedded resource
+        /// </summary>
+        /// <param name="resourceName">Full name of the embedded resource (e.g., "Central_de_Software.Resources.AnyDesk.exe")</param>
+        /// <param name="temporaryFileName">Name for the temporary file (e.g., "anydesk_installer.exe")</param>
+        /// <param name="arguments">Optional command line arguments for silent installation</param>
+        /// <param name="waitForExit">Whether to wait for the installation process to complete</param>
+        /// <returns>True if installation process was started successfully, false otherwise</returns>
+        public static async Task<bool> InstallFromEmbeddedAsync(string resourceName, string temporaryFileName, string arguments = "", bool waitForExit = false)
+        {
+            string tempPath = null;
+            try
+            {
+                // Get the current assembly
+                Assembly assembly = Assembly.GetExecutingAssembly();
+
+                // Get the embedded resource stream
+                using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+                {
+                    if (stream == null)
+                    {
+                        throw new ArgumentException($"Resource '{resourceName}' not found in the assembly.");
+                    }
+
+                    // Create the full path for the temporary file
+                    tempPath = Path.Combine(Path.GetTempPath(), temporaryFileName);
+
+                    // Ensure the temporary file doesn't exist
+                    if (File.Exists(tempPath))
+                    {
+                        try
+                        {
+                            File.Delete(tempPath);
+                        }
+                        catch (Exception)
+                        {
+                            // If we can't delete the file, create a new unique filename
+                            tempPath = Path.Combine(Path.GetTempPath(), 
+                                $"{Path.GetFileNameWithoutExtension(temporaryFileName)}_{Guid.NewGuid()}{Path.GetExtension(temporaryFileName)}");
+                        }
+                    }
+
+                    // Copy the embedded resource to the temporary file
+                    using (FileStream fileStream = File.Create(tempPath))
+                    {
+                        await stream.CopyToAsync(fileStream);
+                    }
+
+                    // Start the installation process
+                    ProcessStartInfo startInfo = new ProcessStartInfo
+                    {
+                        FileName = tempPath,
+                        Arguments = arguments,
+                        UseShellExecute = true, // Required for elevated privileges
+                        Verb = "runas" // Run as administrator
+                    };
+
+                    using (Process process = Process.Start(startInfo))
+                    {
+                        if (waitForExit && process != null)
+                        {
+                            await Task.Run(() => process.WaitForExit());
+                        }
+                    }
+
+                    return true;
+                }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                throw new Exception("Administrative privileges are required to install the software.", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to install {temporaryFileName}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Synchronous version of InstallFromEmbeddedAsync
+        /// </summary>
+        public static bool InstallFromEmbedded(string resourceName, string temporaryFileName, string arguments = "")
+        {
+            return InstallFromEmbeddedAsync(resourceName, temporaryFileName, arguments).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Returns whether the specified software is already installed
+        /// </summary>
+        public static bool IsSoftwareInstalled(string displayName)
+        {
+            var uninstallKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
+            using (var baseKey = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry64))
+            {
+                using (var key = baseKey.OpenSubKey(uninstallKey))
+                {
+                    foreach (string subKeyName in key.GetSubKeyNames())
+                    {
+                        using (var subKey = key.OpenSubKey(subKeyName))
+                        {
+                            var name = subKey.GetValue("DisplayName") as string;
+                            if (!string.IsNullOrEmpty(name) && name.Contains(displayName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Also check 32-bit registry
+            using (var baseKey = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry32))
+            {
+                using (var key = baseKey.OpenSubKey(uninstallKey))
+                {
+                    foreach (string subKeyName in key.GetSubKeyNames())
+                    {
+                        using (var subKey = key.OpenSubKey(subKeyName))
+                        {
+                            var name = subKey.GetValue("DisplayName") as string;
+                            if (!string.IsNullOrEmpty(name) && name.Contains(displayName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+    }
+}

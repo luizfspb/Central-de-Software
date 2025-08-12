@@ -1,0 +1,190 @@
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+using Central_de_Software.Utilities;
+using System.IO;
+using System.Threading.Tasks;
+
+public class UserControlSoftware : UserControl
+{
+    public UserControlSoftware()
+    {
+        InitializeComponent();
+    }
+
+    private void InitializeComponent()
+    {
+        this.Dock = DockStyle.Fill;
+        this.BackColor = Color.White;
+        var corAzul = ColorTranslator.FromHtml("#1A377B");
+        var corLaranja = ColorTranslator.FromHtml("#F15A22");
+
+        var panelContainer = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Color.White
+        };
+        var panel = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            FlowDirection = FlowDirection.TopDown,
+            AutoScroll = false,
+            AutoSize = true,
+            WrapContents = false,
+            Padding = new Padding(30, 30, 0, 0),
+            BackColor = Color.White
+        };
+        panel.Controls.Add(CriarBotoesSoftware("AnyDesk", "anydesk.png"));
+        panel.Controls.Add(CriarBotoesSoftware("Google Chrome", "chrome.png"));
+        panel.Controls.Add(CriarBotoesSoftware("WinRAR", "winrar.png"));
+        panel.Controls.Add(CriarBotoesSoftware("WhatsApp Desktop", "whatsapp.png"));
+        panel.Controls.Add(CriarBotoesSoftware("Adobe Acrobat Reader", "adobe.png"));
+        panel.Controls.Add(CriarBotoesSoftware("Revo Uninstaller", "revo.png"));
+        panel.Controls.Add(CriarBotoesSoftware("Office 365", "office.png"));
+        panelContainer.Controls.Add(panel);
+        this.Controls.Add(panelContainer);
+    }
+
+    private Panel CriarBotoesSoftware(string nome, string icone)
+    {
+        var panel = new Panel { Width = 340, Height = nome == "AnyDesk" ? 120 : 90, BackColor = Color.White };
+        var btnInstalar = CriarBotao($"Instalar {nome}", icone, async () => await Instalar(nome), Color.White, ColorTranslator.FromHtml("#1A377B"));
+        btnInstalar.Top = 0;
+        btnInstalar.Left = 0;
+        panel.Controls.Add(btnInstalar);
+
+        var btnDesinstalar = CriarBotao($"Desinstalar {nome}", icone, async () => await Desinstalar(nome), Color.White, ColorTranslator.FromHtml("#F15A22"));
+        btnDesinstalar.Top = 0;
+        btnDesinstalar.Left = 170;
+        panel.Controls.Add(btnDesinstalar);
+
+        if (nome == "AnyDesk")
+        {
+            var btnLimparCache = CriarBotao("Limpar Cache AnyDesk", icone, async () => await LimparCacheAnyDesk(), Color.White, ColorTranslator.FromHtml("#1A377B"));
+            btnLimparCache.Top = 60;
+            btnLimparCache.Left = 0;
+            btnLimparCache.Width = 320;
+            panel.Controls.Add(btnLimparCache);
+        }
+        return panel;
+    }
+
+    private Button CriarBotao(string texto, string icone, Func<Task> onClick, Color backColor, Color foreColor)
+    {
+        var btn = new Button
+        {
+            Text = "  " + texto,
+            Width = 160,
+            Height = 54,
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Image = ResourceImages.GetImage(icone),
+            ImageAlign = ContentAlignment.MiddleLeft,
+            TextAlign = ContentAlignment.MiddleRight,
+            FlatStyle = FlatStyle.Flat,
+            BackColor = backColor,
+            ForeColor = foreColor,
+            Margin = new Padding(0, 0, 0, 0),
+            TextImageRelation = TextImageRelation.ImageBeforeText
+        };
+        btn.FlatAppearance.BorderSize = 0;
+        btn.FlatAppearance.MouseOverBackColor = ColorTranslator.FromHtml("#F15A22");
+        btn.FlatAppearance.MouseDownBackColor = ColorTranslator.FromHtml("#1A377B");
+        btn.Anchor = AnchorStyles.Left | AnchorStyles.Top;
+        btn.Click += async (s, e) => await onClick();
+        return btn;
+    }
+
+    private async Task Instalar(string nome)
+    {
+        string resourceName = null, tempName = null, args = "";
+        switch (nome)
+        {
+            case "AnyDesk":
+                resourceName = "Central_de_Software.softwares.AnyDesk.exe";
+                tempName = "AnyDesk.exe";
+                break;
+            case "Google Chrome":
+                resourceName = "Central_de_Software.softwares.ChromeSetup.exe";
+                tempName = "ChromeSetup.exe";
+                break;
+            case "WinRAR":
+                resourceName = "Central_de_Software.softwares.winrar-x64-713.exe";
+                tempName = "winrar-x64-713.exe";
+                break;
+            case "WhatsApp Desktop":
+                resourceName = "Central_de_Software.softwares.WhatsApp Installer.exe";
+                tempName = "WhatsApp Installer.exe";
+                break;
+            case "Adobe Acrobat Reader":
+                resourceName = "Central_de_Software.softwares.Reader_br_install.exe";
+                tempName = "Reader_br_install.exe";
+                break;
+            case "Revo Uninstaller":
+                resourceName = "Central_de_Software.softwares.revosetup.exe";
+                tempName = "revosetup.exe";
+                break;
+            case "Office 365":
+                resourceName = "Central_de_Software.softwares.Office365Setup.exe";
+                tempName = "Office365Setup.exe";
+                break;
+        }
+        if (resourceName != null && tempName != null)
+        {
+            try
+            {
+                await SoftwareInstaller.InstallFromEmbeddedAsync(resourceName, tempName, args, true);
+                MessageBox.Show($"{nome} instalado com sucesso!", "Instalação", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao instalar {nome}: {ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+    }
+
+    private async Task Desinstalar(string nome)
+    {
+        try
+        {
+            if (!SoftwareInstaller.IsSoftwareInstalled(nome))
+            {
+                MessageBox.Show($"{nome} não está instalado.", "Informação", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            // Chama o desinstalador padrão do Windows
+            var psi = new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c wmic product where \"Name like '%{nome}%'\" call uninstall /nointeractive")
+            {
+                UseShellExecute = true,
+                Verb = "runas",
+                CreateNoWindow = true
+            };
+            var proc = System.Diagnostics.Process.Start(psi);
+            if (proc != null)
+                await Task.Run(() => proc.WaitForExit());
+            MessageBox.Show($"Desinstalação de {nome} concluída (ou iniciada).", "Desinstalação", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erro ao desinstalar {nome}: {ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private async Task LimparCacheAnyDesk()
+    {
+        await Desinstalar("AnyDesk");
+        try
+        {
+            string roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string anydeskPath = Path.Combine(roaming, "AnyDesk");
+            if (Directory.Exists(anydeskPath))
+            {
+                Directory.Delete(anydeskPath, true);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erro ao excluir a pasta de cache do AnyDesk: {ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        await Instalar("AnyDesk");
+    }
+}

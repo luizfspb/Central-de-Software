@@ -1,0 +1,158 @@
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+using Central_de_Software.Utilities;
+
+public class UserControlSoftwareFunction : UserControl
+{
+    private string nomeSoftware;
+    private string iconeSoftware;
+    private PictureBox pictureBox;
+    private Label labelTitulo;
+    private Label labelDescricao;
+    private Button btnInstalar;
+
+    public UserControlSoftwareFunction(string nome, string icone)
+    {
+        nomeSoftware = nome;
+        iconeSoftware = icone;
+        InitializeComponent();
+    }
+
+    private void InitializeComponent()
+    {
+        this.Dock = DockStyle.Fill;
+        this.BackColor = Color.White;
+        var corAzul = ColorTranslator.FromHtml("#1A377B");
+        var corLaranja = ColorTranslator.FromHtml("#F15A22");
+
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 4,
+            BackColor = Color.White,
+            Padding = new Padding(0, 60, 0, 0)
+        };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Ícone
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Título
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Descrição
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Botão
+
+        pictureBox = new PictureBox
+        {
+            Width = 80,
+            Height = 80,
+            SizeMode = PictureBoxSizeMode.Zoom,
+            Anchor = AnchorStyles.None
+        };
+        if (!string.IsNullOrEmpty(iconeSoftware))
+            pictureBox.Image = ResourceImages.GetImage(iconeSoftware);
+        else
+            pictureBox.Visible = false;
+
+        labelTitulo = new Label
+        {
+            Text = nomeSoftware ?? "Selecione um software ao lado para instalar.",
+            Font = new Font("Segoe UI", 22, FontStyle.Bold),
+            AutoSize = true,
+            ForeColor = corAzul,
+            Anchor = AnchorStyles.None,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Margin = new Padding(0, 20, 0, 10)
+        };
+
+        labelDescricao = new Label
+        {
+            Text = nomeSoftware == null ?
+                "Selecione um software no menu à esquerda para ver detalhes e instalar." :
+                $"Clique no botão abaixo para instalar o {nomeSoftware}.",
+            Font = new Font("Segoe UI", 13),
+            AutoSize = false,
+            Width = 500,
+            Height = 40,
+            ForeColor = corLaranja,
+            Anchor = AnchorStyles.None,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Margin = new Padding(0, 0, 0, 10)
+        };
+
+        btnInstalar = new Button
+        {
+            Text = nomeSoftware == null ? "" : $"Instalar {nomeSoftware}",
+            Width = 260,
+            Height = 48,
+            Font = new Font("Segoe UI", 13, FontStyle.Bold),
+            BackColor = corAzul,
+            ForeColor = Color.White,
+            FlatStyle = FlatStyle.Flat,
+            Visible = nomeSoftware != null,
+            Anchor = AnchorStyles.None,
+            Margin = new Padding(0, 10, 0, 0)
+        };
+        btnInstalar.FlatAppearance.BorderSize = 0;
+        btnInstalar.FlatAppearance.MouseOverBackColor = corLaranja;
+        btnInstalar.Click += (s, e) => InstalarSoftware();
+
+        layout.Controls.Add(pictureBox, 0, 0);
+        layout.Controls.Add(labelTitulo, 0, 1);
+        layout.Controls.Add(labelDescricao, 0, 2);
+        layout.Controls.Add(btnInstalar, 0, 3);
+        layout.SetCellPosition(pictureBox, new TableLayoutPanelCellPosition(0, 0));
+        layout.SetCellPosition(labelTitulo, new TableLayoutPanelCellPosition(0, 1));
+        layout.SetCellPosition(labelDescricao, new TableLayoutPanelCellPosition(0, 2));
+        layout.SetCellPosition(btnInstalar, new TableLayoutPanelCellPosition(0, 3));
+
+        this.Controls.Add(layout);
+    }
+
+    private async void InstalarSoftware()
+    {
+        if (string.IsNullOrEmpty(nomeSoftware)) return;
+        string resourceName = null, tempName = null, args = "";
+        switch (nomeSoftware)
+        {
+            case "AnyDesk":
+                resourceName = "Central_de_Software.Resources.anydesk.exe";
+                tempName = "anydesk_installer.exe";
+                break;
+            case "Google Chrome":
+                resourceName = "Central_de_Software.Resources.chrome_installer.exe";
+                tempName = "chrome_installer.exe";
+                break;
+            case "WinRAR":
+                resourceName = "Central_de_Software.Resources.winrar.exe";
+                tempName = "winrar_installer.exe";
+                break;
+            case "WhatsApp Desktop":
+                resourceName = "Central_de_Software.Resources.whatsapp.exe";
+                tempName = "whatsapp_installer.exe";
+                break;
+            case "Adobe Acrobat Reader":
+                resourceName = "Central_de_Software.Resources.adobe.exe";
+                tempName = "adobe_installer.exe";
+                break;
+            case "Revo Uninstaller":
+                resourceName = "Central_de_Software.Resources.revo.exe";
+                tempName = "revo_installer.exe";
+                break;
+            case "Office 365":
+                resourceName = "Central_de_Software.Resources.office.exe";
+                tempName = "office_installer.exe";
+                break;
+        }
+        if (resourceName != null && tempName != null)
+        {
+            try
+            {
+                await SoftwareInstaller.InstallFromEmbeddedAsync(resourceName, tempName, args, true);
+                MessageBox.Show($"{nomeSoftware} instalado com sucesso!", "Instalação", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao instalar {nomeSoftware}: {ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+    }
+}

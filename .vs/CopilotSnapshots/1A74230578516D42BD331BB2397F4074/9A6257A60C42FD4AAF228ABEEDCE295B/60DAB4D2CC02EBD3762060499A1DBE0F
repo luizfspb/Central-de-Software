@@ -1,0 +1,565 @@
+﻿using System;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Microsoft.Win32;
+
+public class UserControlTools : UserControl
+{
+    private ListView listViewOptions;
+    private Button btnExecutar;
+    private Button btnLimparSelecao;
+    private ProgressBar progressBar;
+    private RichTextBox richTextBoxLog;
+
+    private readonly (string Nome, string Descricao)[] opcoes = new[]
+    {
+        // Ferramentas de Configuração e Ambiente de Usuário
+        ("Restaurar Mapeamentos de Rede", "Refaz os mapeamentos de unidades de rede padrão da empresa."),
+        ("Limpar Cache de Ícones", "Recria o banco de dados de ícones do Windows para corrigir ícones corrompidos."),
+        ("Limpar Cache de Navegadores", "Limpa cache, cookies e histórico dos navegadores (Chrome, Edge, Firefox)."),
+        
+        // Ferramentas de Diagnóstico e Resolução
+        ("Abrir Visualizador de Eventos", "Abre o eventvwr.msc para visualizar logs de erros do sistema."),
+        ("Abrir Gerenciador de Dispositivos", "Abre o devmgmt.msc para verificar problemas com drivers."),
+        ("Ajustar Resolução da Tela", "Abre as configurações de vídeo do Windows."),
+        
+        // Ferramentas de Segurança
+        ("Verificar Atualizações do Sistema", "Abre a tela do Windows Update."),
+        ("Forçar Reinício do PC", "Agenda reinício em 5 ou 10 minutos com aviso na tela."),
+        
+        // Ferramentas existentes
+        ("Criar ponto de restauração", "Cria um ponto de restauração do sistema para reversão segura."),
+        ("Limpar arquivos temporários", "Remove arquivos temporários do Windows e libera espaço em disco."),
+        ("Desativar Cortana", "Desativa o assistente virtual Cortana."),
+        ("Desativar Telemetria", "Desativa coleta de dados de diagnóstico e telemetria."),
+        ("Plano de energia: Alto Desempenho", "Configura o plano de energia para máximo desempenho."),
+        ("Remover apps pré-instalados (bloatware)", "Remove aplicativos padrão desnecessários do Windows."),
+        ("Desabilitar serviços desnecessários", "Desativa serviços do Windows que não são essenciais."),
+        ("Windows Update manual", "Configura o Windows Update para modo manual."),
+        ("Efeitos visuais para desempenho", "Ajusta efeitos visuais para priorizar desempenho."),
+        ("Verificar arquivos do sistema (SFC) e disco (CHKDSK)", "Executa SFC e CHKDSK para corrigir erros do sistema e disco."),
+        ("Limpar fila de impressão (Spooler)", "Limpa a fila de impressão e reinicia o serviço Spooler."),
+        ("Solucionar problemas de rede", "Renova IP, limpa cache DNS e reseta configurações de rede."),
+        ("Limpar atualizações antigas (DISM)", "Remove arquivos de atualizações antigas do Windows.")
+    };
+
+    public UserControlTools()
+    {
+        this.Width = 700;
+        this.Height = 660;
+        InitializeComponent();
+    }
+
+    private void InitializeComponent()
+    {
+        this.listViewOptions = new ListView
+        {
+            Top = 10,
+            Left = 10,
+            Width = 670,
+            Height = 260,
+            View = View.Details,
+            CheckBoxes = true,
+            FullRowSelect = true
+        };
+        listViewOptions.Columns.Add("Otimização", 220);
+        listViewOptions.Columns.Add("Descrição", 430);
+        foreach (var (nome, desc) in opcoes)
+        {
+            var item = new ListViewItem(nome);
+            item.SubItems.Add(desc);
+            listViewOptions.Items.Add(item);
+        }
+
+        this.btnExecutar = new Button { Text = "Executar Selecionados", Top = 280, Left = 10, Width = 180 };
+        this.btnExecutar.Click += btnExecutar_Click;
+        this.btnLimparSelecao = new Button { Text = "Limpar Seleção", Top = 280, Left = 200, Width = 140 };
+        this.btnLimparSelecao.Click += btnLimparSelecao_Click;
+        this.progressBar = new ProgressBar { Top = 320, Left = 10, Width = 670, Height = 20 };
+        this.richTextBoxLog = new RichTextBox { Top = 350, Left = 10, Width = 670, Height = 290, ReadOnly = true };
+
+        this.Controls.Add(listViewOptions);
+        this.Controls.Add(btnExecutar);
+        this.Controls.Add(btnLimparSelecao);
+        this.Controls.Add(progressBar);
+        this.Controls.Add(richTextBoxLog);
+        this.Dock = DockStyle.Fill;
+    }
+
+    private void btnLimparSelecao_Click(object sender, EventArgs e)
+    {
+        foreach (ListViewItem item in listViewOptions.Items)
+            item.Checked = false;
+    }
+
+    private async void btnExecutar_Click(object sender, EventArgs e)
+    {
+        btnExecutar.Enabled = false;
+        btnLimparSelecao.Enabled = false;
+        richTextBoxLog.Clear();
+        progressBar.Value = 0;
+
+        var indices = listViewOptions.CheckedIndices.Cast<int>().ToList();
+        progressBar.Maximum = indices.Count > 0 ? indices.Count : 1;
+
+        foreach (int i in indices)
+        {
+            await ExecutarOpcao(i + 1);
+            progressBar.Value++;
+        }
+
+        btnExecutar.Enabled = true;
+        btnLimparSelecao.Enabled = true;
+        AppendToLog("Otimização concluída.");
+        MessageBox.Show("Otimização concluída!", "Central de Software", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
+    private async Task ExecutarOpcao(int opcao)
+    {
+        switch (opcao)
+        {
+            // Novas opções
+            case 1: await RestaurarMapeamentosRede(); break;
+            case 2: await LimparCacheIcones(); break;
+            case 3: await LimparCacheNavegadores(); break;
+            case 4: AbrirVisualizadorEventos(); break;
+            case 5: AbrirGerenciadorDispositivos(); break;
+            case 6: AbrirConfiguracoesVideo(); break;
+            case 7: AbrirWindowsUpdate(); break;
+            case 8: await ForcarReinicio(); break;
+            
+            // Opções existentes
+            case 9: await CriarPontoRestauracao(); break;
+            case 10: await LimparArquivosTemporarios(); break;
+            case 11: await DesativarCortana(); break;
+            case 12: await DesativarTelemetria(); break;
+            case 13: await PlanoAltoDesempenho(); break;
+            case 14: await RemoverBloatware(); break;
+            case 15: await DesabilitarServicos(); break;
+            case 16: await WindowsUpdateManual(); break;
+            case 17: await EfeitosVisuaisDesempenho(); break;
+            case 18: await SFCeCHKDSK(); break;
+            case 19: await LimparSpooler(); break;
+            case 20: await SolucionarRede(); break;
+            case 21: await LimparAtualizacoesAntigas(); break;
+        }
+    }
+
+    // Implementação das novas funções
+    private async Task RestaurarMapeamentosRede()
+    {
+        AppendToLog("Restaurando mapeamentos de rede existentes...");
+        try
+        {
+            // 1. Obter lista de mapeamentos atuais
+            var psi = new ProcessStartInfo("cmd.exe", "/c net use")
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            var process = Process.Start(psi);
+            string output = await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
+
+            // 2. Parsear as linhas de mapeamento
+            var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var mappings = lines
+                .Where(l => l.Trim().StartsWith("\\"))
+                .Select(l =>
+                {
+                    var parts = l.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2 && parts[1].StartsWith("\\"))
+                        return (Drive: parts[0], Path: parts[1]);
+                    return (Drive: "", Path: "");
+                })
+                .Where(m => !string.IsNullOrEmpty(m.Drive) && !string.IsNullOrEmpty(m.Path))
+                .ToList();
+
+            if (mappings.Count == 0)
+            {
+                AppendToLog("Nenhum mapeamento de rede encontrado.");
+                return;
+            }
+
+            // 3. Desconectar todos
+            foreach (var map in mappings)
+            {
+                AppendToLog($"Desconectando {map.Drive} ({map.Path})...");
+                await RunCommandAsync("net", $"use {map.Drive} /delete /y");
+            }
+
+            // 4. Reconectar todos
+            foreach (var map in mappings)
+            {
+                AppendToLog($"Reconectando {map.Drive} -> {map.Path}...");
+                await RunCommandAsync("net", $"use {map.Drive} {map.Path} /persistent:yes");
+            }
+
+            AppendToLog("Mapeamentos de rede restaurados com sucesso.");
+        }
+        catch (Exception ex)
+        {
+            AppendToLog($"Erro ao restaurar mapeamentos: {ex.Message}");
+        }
+    }
+
+    private async Task LimparCacheIcones()
+    {
+        AppendToLog("Limpando cache de ícones...");
+        try
+        {
+            // Mata o explorer
+            await RunCommandAsync("taskkill", "/f /im explorer.exe");
+
+            // Limpa os arquivos de cache de ícones
+            string iconsCache = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "IconCache.db");
+
+            if (File.Exists(iconsCache))
+            {
+                File.Delete(iconsCache);
+                AppendToLog("Cache de ícones removido.");
+            }
+
+            // Reinicia o explorer
+            Process.Start("explorer.exe");
+            AppendToLog("Cache de ícones limpo com sucesso.");
+        }
+        catch (Exception ex)
+        {
+            AppendToLog($"Erro ao limpar cache de ícones: {ex.Message}");
+            Process.Start("explorer.exe");
+        }
+    }
+
+    private async Task LimparCacheNavegadores()
+    {
+        AppendToLog("Limpando cache dos navegadores...");
+
+        try
+        {
+            // Chrome
+            string chromeCache = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                @"Google\Chrome\User Data\Default\Cache");
+            
+            // Edge
+            string edgeCache = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                @"Microsoft\Edge\User Data\Default\Cache");
+            
+            // Firefox
+            string firefoxCache = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                @"Mozilla\Firefox\Profiles");
+
+            // Fecha os navegadores
+            await RunCommandAsync("taskkill", "/F /IM chrome.exe /T");
+            await RunCommandAsync("taskkill", "/F /IM msedge.exe /T");
+            await RunCommandAsync("taskkill", "/F /IM firefox.exe /T");
+
+            // Limpa os caches
+            if (Directory.Exists(chromeCache))
+            {
+                Directory.Delete(chromeCache, true);
+                AppendToLog("Cache do Chrome limpo.");
+            }
+
+            if (Directory.Exists(edgeCache))
+            {
+                Directory.Delete(edgeCache, true);
+                AppendToLog("Cache do Edge limpo.");
+            }
+
+            if (Directory.Exists(firefoxCache))
+            {
+                foreach (var profile in Directory.GetDirectories(firefoxCache))
+                {
+                    var cache = Path.Combine(profile, "cache2");
+                    if (Directory.Exists(cache))
+                    {
+                        Directory.Delete(cache, true);
+                    }
+                }
+                AppendToLog("Cache do Firefox limpo.");
+            }
+
+            AppendToLog("Limpeza de cache dos navegadores concluída.");
+        }
+        catch (Exception ex)
+        {
+            AppendToLog($"Erro ao limpar cache dos navegadores: {ex.Message}");
+        }
+    }
+
+    private void AbrirVisualizadorEventos()
+    {
+        AppendToLog("Abrindo Visualizador de Eventos...");
+        Process.Start("eventvwr.msc");
+    }
+
+    private void AbrirGerenciadorDispositivos()
+    {
+        AppendToLog("Abrindo Gerenciador de Dispositivos...");
+        Process.Start("devmgmt.msc");
+    }
+
+    private void AbrirConfiguracoesVideo()
+    {
+        AppendToLog("Abrindo Configurações de Vídeo...");
+        Process.Start("ms-settings:display");
+    }
+
+    private void AbrirWindowsUpdate()
+    {
+        AppendToLog("Abrindo Windows Update...");
+        Process.Start("ms-settings:windowsupdate");
+    }
+
+    private async Task ForcarReinicio()
+    {
+        var result = MessageBox.Show(
+            "Escolha o tempo para reiniciar:\n\n" +
+            "Sim = 5 minutos\n" +
+            "Não = 10 minutos\n" +
+            "Cancelar = Cancelar reinício",
+            "Agendar Reinício",
+            MessageBoxButtons.YesNoCancel,
+            MessageBoxIcon.Question
+        );
+
+        if (result == DialogResult.Cancel)
+        {
+            AppendToLog("Reinício cancelado pelo usuário.");
+            return;
+        }
+
+        int minutos = result == DialogResult.Yes ? 5 : 10;
+        AppendToLog($"Agendando reinício para {minutos} minutos...");
+
+        // Cancela qualquer shutdown agendado anteriormente
+        await RunCommandAsync("shutdown", "/a");
+
+        // Agenda o novo shutdown
+        await RunCommandAsync("shutdown", $"/r /t {minutos * 60}");
+
+        MessageBox.Show(
+            $"O computador será reiniciado em {minutos} minutos.\n" +
+            "Salve seus trabalhos e feche todos os programas.",
+            "Reinício Agendado",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Warning
+        );
+
+        AppendToLog($"Reinício agendado para {minutos} minutos.");
+    }
+
+    private async Task CriarPontoRestauracao()
+    {
+        AppendToLog("Criando ponto de restauração...");
+        await RunCommandAsync("powershell.exe", "-Command \"Checkpoint-Computer -Description 'Ponto de Restauracao - Otimizacao' -RestorePointType 'MODIFY_SETTINGS'\"");
+        AppendToLog("Ponto de restauração criado.");
+    }
+    private async Task LimparArquivosTemporarios()
+    {
+        var result = MessageBox.Show(
+            "ATENÇÃO!\n\n" +
+            "Para limpar os arquivos temporários com segurança, é necessário:\n\n" +
+            "1. Fechar todos os programas abertos\n" +
+            "2. Salvar todos os trabalhos em andamento\n" +
+            "3. Fechar todos os navegadores\n\n" +
+            "Alguns arquivos podem estar em uso e não serão excluídos se os programas " +
+            "continuarem abertos.\n\n" +
+            "Deseja continuar?",
+            "Aviso - Limpeza de Arquivos Temporários",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning
+        );
+
+        if (result == DialogResult.Yes)
+        {
+            AppendToLog("Limpando arquivos temporários...");
+            
+            // Lista de diretórios temporários comuns
+            string[] tempPaths = {
+                Environment.GetEnvironmentVariable("TEMP"),
+                Environment.GetEnvironmentVariable("TMP"),
+                @"C:\Windows\Temp",
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp")
+            };
+
+            foreach (string path in tempPaths)
+            {
+                if (Directory.Exists(path))
+                {
+                    AppendToLog($"Limpando: {path}");
+                    try
+                    {
+                        await RunCommandAsync("cmd.exe", $"/c del /f /s /q \"{path}\\*.*\" > nul 2>&1");
+                    }
+                    catch (Exception ex)
+                    {
+                        AppendToLog($"Erro ao limpar {path}: {ex.Message}");
+                    }
+                }
+            }
+
+            // Limpar também a Lixeira
+            try
+            {
+                AppendToLog("Esvaziando a Lixeira...");
+                await RunCommandAsync("cmd.exe", "/c rd /s /q %systemdrive%\\$Recycle.bin");
+            }
+            catch (Exception ex)
+            {
+                AppendToLog($"Erro ao esvaziar a Lixeira: {ex.Message}");
+            }
+
+            AppendToLog("Limpeza de arquivos temporários concluída.");
+            MessageBox.Show(
+                "Limpeza de arquivos temporários concluída!\n\n" +
+                "Se alguns arquivos não puderam ser excluídos, isso significa que eles " +
+                "ainda estão em uso por algum programa.",
+                "Limpeza Concluída",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information
+            );
+        }
+        else
+        {
+            AppendToLog("Limpeza de arquivos temporários cancelada pelo usuário.");
+        }
+    }
+    private async Task DesativarCortana()
+    {
+        AppendToLog("Desativando Cortana...");
+        await RunCommandAsync("reg.exe", "add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search\" /v AllowCortana /t REG_DWORD /d 0 /f");
+        AppendToLog("Cortana desativada.");
+    }
+    private async Task DesativarTelemetria()
+    {
+        AppendToLog("Desativando Telemetria...");
+        await RunCommandAsync("sc.exe", "stop DiagTrack");
+        await RunCommandAsync("sc.exe", "config DiagTrack start= disabled");
+        await RunCommandAsync("sc.exe", "stop dmwappushservice");
+        await RunCommandAsync("sc.exe", "config dmwappushservice start= disabled");
+        AppendToLog("Telemetria desativada.");
+    }
+    private async Task PlanoAltoDesempenho()
+    {
+        AppendToLog("Configurando plano de energia para Alto Desempenho...");
+        await RunCommandAsync("powercfg.exe", "-setactive SCHEME_MIN");
+        AppendToLog("Plano de energia configurado.");
+    }
+    private async Task RemoverBloatware()
+    {
+        AppendToLog("Removendo apps pré-instalados...");
+        string[] packages = { "xboxapp", "xboxgamingoverlay", "solitairecollection", "zunevideo", "zune", "music", "skypeapp", "bingweather", "peopleofficehub", "getstarted", "feedbackhub" };
+        foreach (var pkg in packages)
+        {
+            await RunCommandAsync("powershell.exe", $"-Command \"Get-AppxPackage *{pkg}* | ForEach-Object {{ Remove-AppxPackage -Package $_.PackageFullName -ErrorAction SilentlyContinue }}\"");
+        }
+        AppendToLog("Apps pré-instalados removidos.");
+    }
+    private async Task DesabilitarServicos()
+    {
+        AppendToLog("Desabilitando serviços desnecessários...");
+        await RunCommandAsync("sc.exe", "config Fax start= disabled");
+        await RunCommandAsync("sc.exe", "stop Fax");
+        await RunCommandAsync("sc.exe", "config MapsBroker start= disabled");
+        await RunCommandAsync("sc.exe", "stop MapsBroker");
+        AppendToLog("Serviços desnecessários desabilitados.");
+    }
+    private async Task WindowsUpdateManual()
+    {
+        AppendToLog("Ajustando Windows Update para manual...");
+        await RunCommandAsync("sc.exe", "config wuauserv start= demand");
+        await RunCommandAsync("net.exe", "stop wuauserv");
+        AppendToLog("Windows Update ajustado para manual.");
+    }
+    private async Task EfeitosVisuaisDesempenho()
+    {
+        AppendToLog("Ajustando efeitos visuais para desempenho...");
+        await RunCommandAsync("reg.exe", "add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects\" /v VisualFXSetting /t REG_DWORD /d 2 /f");
+        await RunCommandAsync("reg.exe", "add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\" /v ListviewAlphaSelect /t REG_DWORD /d 0 /f");
+        await RunCommandAsync("reg.exe", "add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\" /v TaskbarAnimations /t REG_DWORD /d 0 /f");
+        await RunCommandAsync("reg.exe", "add \"HKCU\\Control Panel\\Desktop\" /v DragFullWindows /t REG_SZ /d 0 /f");
+        await RunCommandAsync("reg.exe", "add \"HKCU\\Control Panel\\Desktop\" /v MenuShowDelay /t REG_SZ /d 0 /f");
+        await RunCommandAsync("reg.exe", "add \"HKCU\\Control Panel\\Desktop\" /v FontSmoothing /t REG_SZ /d 2 /f");
+        await RunCommandAsync("reg.exe", "add \"HKCU\\Control Panel\\Desktop\" /v UserPreferencesMask /t REG_BINARY /d 9012038010000000 /f");
+        AppendToLog("Efeitos visuais ajustados.");
+    }
+    private async Task SFCeCHKDSK()
+    {
+        AppendToLog("Executando SFC /scannow...");
+        await RunCommandAsync("sfc.exe", "/scannow");
+        AppendToLog("Executando CHKDSK C: /F /R...");
+        await RunCommandAsync("cmd.exe", "/c chkdsk C: /F /R");
+        AppendToLog("Verificação de disco agendada.");
+    }
+    private async Task LimparSpooler()
+    {
+        AppendToLog("Limpando fila de impressão (Spooler)...");
+        await RunCommandAsync("net.exe", "stop spooler");
+        await RunCommandAsync("cmd.exe", "/c del /q /f /s \"C:\\Windows\\System32\\spool\\PRINTERS\\*.*\"");
+        await RunCommandAsync("net.exe", "start spooler");
+        AppendToLog("Fila de impressão limpa.");
+    }
+    private async Task SolucionarRede()
+    {
+        AppendToLog("Solucionando problemas de conectividade de rede...");
+        await RunCommandAsync("ipconfig.exe", "/release");
+        await RunCommandAsync("ipconfig.exe", "/renew");
+        await RunCommandAsync("ipconfig.exe", "/flushdns");
+        await RunCommandAsync("netsh.exe", "winsock reset");
+        AppendToLog("Configurações de rede renovadas e cache DNS limpo.");
+    }
+    private async Task LimparAtualizacoesAntigas()
+    {
+        AppendToLog("Limpando atualizações antigas do Windows...");
+        await RunCommandAsync("dism.exe", "/Online /Cleanup-Image /StartComponentCleanup /ResetBase");
+        AppendToLog("Atualizações antigas removidas.");
+    }
+
+    private async Task RunCommandAsync(string fileName, string arguments)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = fileName,
+            Arguments = arguments,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            Verb = "runas"
+        };
+
+        using (var process = new Process { StartInfo = psi })
+        {
+            process.OutputDataReceived += (s, e) => { if (e.Data != null) AppendToLog(e.Data); };
+            process.ErrorDataReceived += (s, e) => { if (e.Data != null) AppendToLog(e.Data); };
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            await Task.Run(() => process.WaitForExit());
+        }
+    }
+
+    private void AppendToLog(string text)
+    {
+        if (richTextBoxLog.InvokeRequired)
+            richTextBoxLog.Invoke(new Action<string>(AppendToLog), text);
+        else
+        {
+            richTextBoxLog.AppendText(text + Environment.NewLine);
+            richTextBoxLog.ScrollToCaret();
+        }
+    }
+}

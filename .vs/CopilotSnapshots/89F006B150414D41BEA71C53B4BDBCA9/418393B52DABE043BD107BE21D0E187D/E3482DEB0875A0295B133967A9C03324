@@ -1,0 +1,64 @@
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+
+namespace Central_de_Software
+{
+    public class UserControlDiagnosticsTech : UserControlDiagnostics
+    {
+        private const string DEFAULT_PASSWORD = "1212";
+        private string currentPassword = DEFAULT_PASSWORD;
+        private Button btnVoltar;
+        public event EventHandler VoltarClicked;
+
+        public UserControlDiagnosticsTech() : base()
+        {
+            this.BackColor = Color.FromArgb(30, 30, 30);
+            ConfigureDarkTheme();
+            RemoverBotoesExtras();
+            AdicionarBotaoVoltar();
+        }
+
+        private void ConfigureDarkTheme()
+        {
+            // Configure dark theme for rich text box
+            richTextBoxInfo.BackColor = Color.FromArgb(45, 45, 45);
+            richTextBoxInfo.ForeColor = Color.LightGray;
+        }
+
+        private void RemoverBotoesExtras()
+        {
+            // Remove todos os botões herdados
+            this.Controls.Remove(btnDiagnostico);
+            this.Controls.Remove(btnCopiar);
+            this.Controls.Remove(btnSalvar);
+            // Remove outros controles extras se necessário
+            foreach (Control ctrl in this.Controls.Find("btnChangePassword", true))
+                this.Controls.Remove(ctrl);
+        }
+
+        private void AdicionarBotaoVoltar()
+        {
+            btnVoltar = new Button
+            {
+                Text = "Voltar",
+                Top = 10,
+                Left = 10,
+                Width = 100,
+                Height = 30,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(60, 60, 60),
+                ForeColor = Color.White
+            };
+            btnVoltar.FlatAppearance.BorderSize = 0;
+            btnVoltar.FlatAppearance.MouseOverBackColor = Color.FromArgb(80, 80, 80);
+            btnVoltar.Click += (s, e) => VoltarClicked?.Invoke(this, EventArgs.Empty);
+            this.Controls.Add(btnVoltar);
+        }
+
+        public bool ValidatePassword(string password)
+        {
+            return password == currentPassword;
+        }
+    }
+}

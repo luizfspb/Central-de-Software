@@ -1,0 +1,269 @@
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+using Central_de_Software.Utilities;
+using System.IO;
+using System.Threading.Tasks;
+
+public class UserControlSoftwareFunction : UserControl
+{
+    private string nomeSoftware;
+    private string iconeSoftware;
+    private TableLayoutPanel layout;
+    private RichTextBox logBox;
+
+    public UserControlSoftwareFunction(string nome, string icone)
+    {
+        nomeSoftware = nome;
+        iconeSoftware = icone;
+        InitializeComponent();
+    }
+
+    private void InitializeComponent()
+    {
+        this.Dock = DockStyle.Fill;
+        this.BackColor = Color.White;
+        var corAzul = ColorTranslator.FromHtml("#1A377B");
+        var corLaranja = ColorTranslator.FromHtml("#F15A22");
+
+        layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            ColumnCount = 2,
+            RowCount = 1,
+            AutoSize = true,
+            BackColor = Color.White,
+            Padding = new Padding(40, 30, 40, 0),
+            CellBorderStyle = TableLayoutPanelCellBorderStyle.None
+        };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        logBox = new RichTextBox
+        {
+            Visible = false,
+            ReadOnly = true,
+            Height = 120,
+            Width = 540,
+            Font = new Font("Consolas", 10F),
+            BackColor = Color.WhiteSmoke,
+            ForeColor = Color.Black,
+            Margin = new Padding(10, 10, 10, 10),
+            Anchor = AnchorStyles.Left | AnchorStyles.Top
+        };
+
+        if (!string.IsNullOrEmpty(nomeSoftware))
+        {
+            var btnInstalar = new Button
+            {
+                Text = $"Instalar {nomeSoftware}",
+                Width = 260,
+                Height = 48,
+                Font = new Font("Segoe UI", 13, FontStyle.Bold),
+                BackColor = Color.White,
+                ForeColor = corAzul,
+                FlatStyle = FlatStyle.Flat,
+                Margin = new Padding(10, 10, 10, 10),
+                Anchor = AnchorStyles.Left | AnchorStyles.Top
+            };
+            btnInstalar.FlatAppearance.BorderSize = 0;
+            btnInstalar.FlatAppearance.MouseOverBackColor = Color.FromArgb(230, 230, 255);
+            btnInstalar.Click += async (s, e) => await InstalarSoftware();
+
+            var btnDesinstalar = new Button
+            {
+                Text = $"Desinstalar {nomeSoftware}",
+                Width = 260,
+                Height = 48,
+                Font = new Font("Segoe UI", 13, FontStyle.Bold),
+                BackColor = Color.White,
+                ForeColor = corLaranja,
+                FlatStyle = FlatStyle.Flat,
+                Margin = new Padding(10, 10, 10, 10),
+                Anchor = AnchorStyles.Left | AnchorStyles.Top
+            };
+            btnDesinstalar.FlatAppearance.BorderSize = 0;
+            btnDesinstalar.FlatAppearance.MouseOverBackColor = Color.FromArgb(255, 230, 230);
+            btnDesinstalar.Click += async (s, e) => await DesinstalarSoftware();
+
+            layout.Controls.Add(btnInstalar, 0, 0);
+            layout.Controls.Add(btnDesinstalar, 1, 0);
+
+            if (nomeSoftware == "AnyDesk")
+            {
+                var btnLimparCache = new Button
+                {
+                    Text = "Limpar Cache do AnyDesk",
+                    Width = 540,
+                    Height = 48,
+                    Font = new Font("Segoe UI", 13, FontStyle.Bold),
+                    BackColor = Color.White,
+                    ForeColor = corAzul,
+                    FlatStyle = FlatStyle.Flat,
+                    Margin = new Padding(10, 10, 10, 10),
+                    Anchor = AnchorStyles.Left | AnchorStyles.Top
+                };
+                btnLimparCache.FlatAppearance.BorderSize = 0;
+                btnLimparCache.FlatAppearance.MouseOverBackColor = Color.FromArgb(230, 230, 255);
+                btnLimparCache.Click += async (s, e) => await LimparCacheAnyDesk();
+                layout.RowCount = 3;
+                layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                layout.Controls.Add(btnLimparCache, 0, 1);
+                layout.SetColumnSpan(btnLimparCache, 2);
+                layout.Controls.Add(logBox, 0, 2);
+                layout.SetColumnSpan(logBox, 2);
+            }
+        }
+        else
+        {
+            var label = new Label
+            {
+                Text = "Selecione um software no menu à esquerda para ver detalhes e instalar.",
+                Font = new Font("Segoe UI", 16, FontStyle.Bold),
+                ForeColor = corAzul,
+                AutoSize = true,
+                Margin = new Padding(10, 30, 10, 10),
+                Anchor = AnchorStyles.Left | AnchorStyles.Top
+            };
+            layout.Controls.Add(label, 0, 0);
+            layout.SetColumnSpan(label, 2);
+        }
+        this.Controls.Add(layout);
+    }
+
+    private async Task InstalarSoftware()
+    {
+        string resourceName = null, tempName = null, args = "";
+        switch (nomeSoftware)
+        {
+            case "AnyDesk":
+                resourceName = "Central_de_Software.softwares.AnyDesk.exe";
+                tempName = "AnyDesk.exe";
+                break;
+            case "Google Chrome":
+                resourceName = "Central_de_Software.softwares.ChromeSetup.exe";
+                tempName = "ChromeSetup.exe";
+                break;
+            case "WinRAR":
+                resourceName = "Central_de_Software.softwares.winrar-x64-713.exe";
+                tempName = "winrar-x64-713.exe";
+                break;
+            case "WhatsApp Desktop":
+                resourceName = "Central_de_Software.softwares.WhatsApp Installer.exe";
+                tempName = "WhatsApp Installer.exe";
+                break;
+            case "Adobe Acrobat Reader":
+                resourceName = "Central_de_Software.softwares.Reader_br_install.exe";
+                tempName = "Reader_br_install.exe";
+                break;
+            case "Revo Uninstaller":
+                resourceName = "Central_de_Software.softwares.revosetup.exe";
+                tempName = "revosetup.exe";
+                break;
+            case "Office 365":
+                resourceName = "Central_de_Software.softwares.Office365Setup.exe";
+                tempName = "Office365Setup.exe";
+                break;
+            case "Visualizador Apollo":
+                resourceName = "Central_de_Software.softwares.VisualizadorApollo.exe";
+                tempName = "VisualizadorApollo.exe";
+                break;
+        }
+        if (resourceName != null && tempName != null)
+        {
+            try
+            {
+                await SoftwareInstaller.InstallFromEmbeddedAsync(resourceName, tempName, args, true);
+                MessageBox.Show($"{nomeSoftware} instalado com sucesso!", "Instalação", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao instalar {nomeSoftware}: {ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+    }
+
+    private async Task DesinstalarSoftware(bool log = false)
+    {
+        try
+        {
+            if (!SoftwareInstaller.IsSoftwareInstalled(nomeSoftware))
+            {
+                if (log) AppendLog($"{nomeSoftware} não está instalado.\n");
+                else MessageBox.Show($"{nomeSoftware} não está instalado.", "Informação", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            var result = log ? DialogResult.Yes : MessageBox.Show($"Tem certeza que deseja desinstalar {nomeSoftware}?", "Confirmação", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (result == DialogResult.Yes)
+            {
+                if (log) AppendLog($"Desinstalando {nomeSoftware}...\n");
+                var psi = new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c wmic product where \"Name like '%{nomeSoftware}%'\" call uninstall /nointeractive")
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
+                    RedirectStandardOutput = log,
+                    RedirectStandardError = log
+                };
+                var proc = System.Diagnostics.Process.Start(psi);
+                if (proc != null)
+                {
+                    if (log)
+                    {
+                        string output = await proc.StandardOutput.ReadToEndAsync();
+                        string error = await proc.StandardError.ReadToEndAsync();
+                        AppendLog(output);
+                        if (!string.IsNullOrWhiteSpace(error)) AppendLog(error);
+                    }
+                    await Task.Run(() => proc.WaitForExit());
+                    if (log) AppendLog("Desinstalação concluída.\n");
+                    else MessageBox.Show($"Desinstalação de {nomeSoftware} concluída.", "Desinstalação", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            if (log) AppendLog($"Erro ao desinstalar {nomeSoftware}: {ex.Message}\n");
+            else MessageBox.Show($"Erro ao desinstalar {nomeSoftware}: {ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private async Task LimparCacheAnyDesk()
+    {
+        logBox.Visible = true;
+        logBox.Clear();
+        AppendLog("Iniciando limpeza de cache do AnyDesk...\n");
+        try
+        {
+            await DesinstalarSoftware(log: true);
+            AppendLog("Limpando pasta de cache...\n");
+            string roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string anydeskPath = Path.Combine(roaming, "AnyDesk");
+            if (Directory.Exists(anydeskPath))
+            {
+                Directory.Delete(anydeskPath, true);
+                AppendLog("Cache do AnyDesk removido com sucesso!\n");
+            }
+            else
+            {
+                AppendLog("Pasta de cache do AnyDesk não encontrada.\n");
+            }
+            AppendLog("Reinstalando AnyDesk...\n");
+            await InstalarSoftware();
+            AppendLog("Processo concluído!\n");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Erro ao limpar cache do AnyDesk: {ex.Message}\n");
+        }
+    }
+
+    private void AppendLog(string text)
+    {
+        if (logBox.InvokeRequired)
+            logBox.Invoke(new Action<string>(AppendLog), text);
+        else
+            logBox.AppendText(text);
+    }
+}

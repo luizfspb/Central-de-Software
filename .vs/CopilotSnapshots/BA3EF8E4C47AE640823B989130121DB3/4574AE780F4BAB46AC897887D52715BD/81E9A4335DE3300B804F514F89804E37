@@ -1,0 +1,162 @@
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+using Central_de_Software.Utilities;
+
+public class FormMain : Form
+{
+    private Panel panelMenuSuperior;
+    private Button btnMenuSoftware;
+    private Button btnMenuTools;
+    private Button btnMenuFiscal;
+    private Panel panelLateral;
+    private Panel panelCentral;
+
+    // UserControls para cada tema
+    private UserControlSoftware userControlSoftware = new UserControlSoftware();
+    private UserControlTools userControlTools = new UserControlTools();
+    private UserControlFiscal userControlFiscal = new UserControlFiscal();
+    private UserControlFiscalXmlEditor userControlFiscalXmlEditor = new UserControlFiscalXmlEditor();
+
+    public FormMain()
+    {
+        InitializeComponent();
+    }
+
+    private void InitializeComponent()
+    {
+        this.Text = "Central de Software";
+        this.Width = 950;
+        this.Height = 700;
+        this.FormBorderStyle = FormBorderStyle.FixedDialog;
+        this.MaximizeBox = false;
+        this.MinimizeBox = true;
+        this.StartPosition = FormStartPosition.CenterScreen;
+        this.MaximumSize = new Size(950, 700);
+        this.MinimumSize = new Size(950, 700);
+
+        // Menu superior
+        panelMenuSuperior = new Panel { Height = 80, Dock = DockStyle.Top, BackColor = Color.WhiteSmoke };
+        btnMenuSoftware = new Button
+        {
+            Text = "  Softwares",
+            TextAlign = ContentAlignment.MiddleRight,
+            ImageAlign = ContentAlignment.MiddleLeft,
+            Width = 180,
+            Height = 60,
+            FlatStyle = FlatStyle.Flat,
+            Font = new Font("Segoe UI", 11, FontStyle.Bold),
+            Image = ResourceImages.GetImage("software.ico"),
+            Location = new Point(20, 10),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left
+        };
+        btnMenuTools = new Button
+        {
+            Text = "  Tools",
+            TextAlign = ContentAlignment.MiddleRight,
+            ImageAlign = ContentAlignment.MiddleLeft,
+            Width = 180,
+            Height = 60,
+            FlatStyle = FlatStyle.Flat,
+            Font = new Font("Segoe UI", 11, FontStyle.Bold),
+            Image = ResourceImages.GetImage("tools.ico"),
+            Location = new Point(220, 10),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left
+        };
+        btnMenuFiscal = new Button
+        {
+            Text = "  Fiscal",
+            TextAlign = ContentAlignment.MiddleRight,
+            ImageAlign = ContentAlignment.MiddleLeft,
+            Width = 180,
+            Height = 60,
+            FlatStyle = FlatStyle.Flat,
+            Font = new Font("Segoe UI", 11, FontStyle.Bold),
+            Image = ResourceImages.GetImage("fiscal.ico"),
+            Location = new Point(420, 10),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left
+        };
+        btnMenuSoftware.Click += (s, e) => ShowLateralMenu("software");
+        btnMenuTools.Click += (s, e) => ShowLateralMenu("tools");
+        btnMenuFiscal.Click += (s, e) => ShowLateralMenu("fiscal");
+        panelMenuSuperior.Controls.AddRange(new Control[] { btnMenuSoftware, btnMenuTools, btnMenuFiscal });
+
+        // Painel lateral e central
+        panelLateral = new Panel { Width = 220, Dock = DockStyle.Left, BackColor = Color.FromArgb(240, 240, 240) };
+        panelCentral = new Panel { Dock = DockStyle.Fill, BackColor = Color.White };
+
+        this.Controls.Add(panelCentral);
+        this.Controls.Add(panelLateral);
+        this.Controls.Add(panelMenuSuperior);
+    }
+
+    private void ShowLateralMenu(string tema)
+    {
+        panelLateral.Controls.Clear();
+        panelCentral.Controls.Clear();
+        if (tema == "software")
+        {
+            var btn = new Button
+            {
+                Text = "  Central de Softwares",
+                Width = 200,
+                Height = 50,
+                Top = 30,
+                Left = 10,
+                Font = new Font("Segoe UI", 10F),
+                Image = ResourceImages.GetImage("software.ico"),
+                ImageAlign = ContentAlignment.MiddleLeft,
+                TextAlign = ContentAlignment.MiddleRight,
+                FlatStyle = FlatStyle.Standard,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+            };
+            btn.Click += (s, e) => ShowCentralContent(userControlSoftware);
+            panelLateral.Controls.Add(btn);
+        }
+        else if (tema == "tools")
+        {
+            var btn = new Button
+            {
+                Text = "  Otimização do Windows",
+                Width = 200,
+                Height = 50,
+                Top = 30,
+                Left = 10,
+                Font = new Font("Segoe UI", 10F),
+                Image = ResourceImages.GetImage("tools.ico"),
+                ImageAlign = ContentAlignment.MiddleLeft,
+                TextAlign = ContentAlignment.MiddleRight,
+                FlatStyle = FlatStyle.Standard,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+            };
+            btn.Click += (s, e) => ShowCentralContent(userControlTools);
+            panelLateral.Controls.Add(btn);
+        }
+        else if (tema == "fiscal")
+        {
+            var btn = new Button
+            {
+                Text = "  Editor de XML da NFe",
+                Width = 200,
+                Height = 50,
+                Top = 30,
+                Left = 10,
+                Font = new Font("Segoe UI", 10F),
+                Image = ResourceImages.GetImage("xml.ico"),
+                ImageAlign = ContentAlignment.MiddleLeft,
+                TextAlign = ContentAlignment.MiddleRight,
+                FlatStyle = FlatStyle.Standard,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+            };
+            btn.Click += (s, e) => ShowCentralContent(userControlFiscalXmlEditor);
+            panelLateral.Controls.Add(btn);
+        }
+    }
+
+    private void ShowCentralContent(UserControl control)
+    {
+        panelCentral.Controls.Clear();
+        control.Dock = DockStyle.Fill;
+        panelCentral.Controls.Add(control);
+    }
+}

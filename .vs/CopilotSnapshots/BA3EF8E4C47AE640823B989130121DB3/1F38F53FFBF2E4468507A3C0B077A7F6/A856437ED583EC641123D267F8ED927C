@@ -1,0 +1,63 @@
+﻿using System.Windows.Forms;
+using System.Drawing;
+
+public class UserControlHome : UserControl
+{
+    public UserControlHome()
+    {
+        InitializeComponent();
+    }
+
+    private void InitializeComponent()
+    {
+        this.Dock = DockStyle.Fill;
+        this.BackColor = Color.White;
+
+        var pictureBox = new PictureBox
+        {
+            Width = 120,
+            Height = 120,
+            Top = 60,
+            Left = (this.Width - 120) / 2,
+            SizeMode = PictureBoxSizeMode.Zoom,
+            Anchor = AnchorStyles.Top
+        };
+        // Carregue sua logo aqui. Exemplo: pictureBox.Image = Image.FromFile("logo.png");
+        // Para demo, deixo sem imagem.
+
+        var labelTitulo = new Label
+        {
+            Text = "Bem-vindo à Central de Software",
+            Font = new Font("Segoe UI", 20, FontStyle.Bold),
+            AutoSize = true,
+            Top = 200,
+            Left = (this.Width - 500) / 2,
+            Width = 500,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Anchor = AnchorStyles.Top
+        };
+
+        var labelMensagem = new Label
+        {
+            Text = "Escolha uma das opções no menu ao lado para instalar softwares, otimizar seu sistema ou acessar funções fiscais.",
+            Font = new Font("Segoe UI", 12),
+            AutoSize = false,
+            Width = 600,
+            Height = 60,
+            Top = 260,
+            Left = (this.Width - 600) / 2,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Anchor = AnchorStyles.Top
+        };
+
+        this.Controls.Add(pictureBox);
+        this.Controls.Add(labelTitulo);
+        this.Controls.Add(labelMensagem);
+        this.Resize += (s, e) =>
+        {
+            pictureBox.Left = (this.Width - pictureBox.Width) / 2;
+            labelTitulo.Left = (this.Width - labelTitulo.Width) / 2;
+            labelMensagem.Left = (this.Width - labelMensagem.Width) / 2;
+        };
+    }
+}

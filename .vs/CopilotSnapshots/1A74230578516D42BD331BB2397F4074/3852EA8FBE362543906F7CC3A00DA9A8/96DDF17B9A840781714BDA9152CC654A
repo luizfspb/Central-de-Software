@@ -1,0 +1,432 @@
+﻿using System;
+using System.Diagnostics;
+using System.Windows.Forms;
+using System.Threading.Tasks;
+using System.Linq;
+using System.Reflection;
+using System.Drawing;
+
+namespace Central_de_Software
+{
+    public class UserControlDiagnostics : UserControl, IModoTecnicoAware
+    {
+        protected RichTextBox richTextBoxInfo;
+        protected Button btnDiagnostico;
+        protected Button btnCopiar;
+        protected Button btnSalvar;
+        protected SaveFileDialog saveFileDialog;
+        protected Label lblAdmin;
+
+        protected Assembly managementAssembly;
+        protected Assembly serviceProcessAssembly;
+        protected Type managementObjectSearcherType;
+        protected Type serviceControllerType;
+
+        public UserControlDiagnostics()
+        {
+            LoadRequiredAssemblies();
+            InitializeComponent();
+        }
+
+        public void OnModoTecnicoChanged(bool modoTecnicoAtivo)
+        {
+            // Aplica tema escuro
+            Color backColor = modoTecnicoAtivo ? Color.FromArgb(32, 32, 32) : Color.White;
+            Color foreColor = modoTecnicoAtivo ? Color.White : Color.Black;
+            Color buttonBack = modoTecnicoAtivo ? Color.FromArgb(64, 64, 64) : SystemColors.Control;
+
+            this.BackColor = backColor;
+            richTextBoxInfo.BackColor = modoTecnicoAtivo ? Color.FromArgb(40, 40, 40) : Color.White;
+            richTextBoxInfo.ForeColor = foreColor;
+
+            btnDiagnostico.BackColor = buttonBack;
+            btnDiagnostico.ForeColor = foreColor;
+            btnCopiar.BackColor = buttonBack;
+            btnCopiar.ForeColor = foreColor;
+            btnSalvar.BackColor = buttonBack;
+            btnSalvar.ForeColor = foreColor;
+
+            // Aviso de modo técnico
+            if (lblAdmin == null)
+            {
+                lblAdmin = new Label
+                {
+                    Text = "Funções avançadas de diagnóstico disponíveis no modo técnico.",
+                    AutoSize = true,
+                    Location = new Point(10, 620),
+                    ForeColor = Color.Orange,
+                    Font = new Font("Segoe UI", 9, FontStyle.Bold)
+                };
+                this.Controls.Add(lblAdmin);
+            }
+            lblAdmin.Visible = modoTecnicoAtivo;
+
+            // Atualiza texto do botão conforme o modo
+            btnDiagnostico.Text = modoTecnicoAtivo ? 
+                "Executar Diagnóstico Completo" : 
+                "Executar Diagnóstico Básico";
+        }
+
+        private void LoadRequiredAssemblies()
+        {
+            try
+            {
+                managementAssembly = Assembly.Load("System.Management, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+                serviceProcessAssembly = Assembly.Load("System.ServiceProcess, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+                
+                managementObjectSearcherType = managementAssembly.GetType("System.Management.ManagementObjectSearcher");
+                serviceControllerType = serviceProcessAssembly.GetType("System.ServiceProcess.ServiceController");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao carregar assemblies: {ex.Message}\n\nAlgumas funcionalidades de diagnóstico podem não estar disponíveis.", 
+                    "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void InitializeComponent()
+        {
+            this.Width = 700;
+            this.Height = 660;
+            this.Dock = DockStyle.Fill;
+
+            richTextBoxInfo = new RichTextBox
+            {
+                Top = 50,
+                Left = 10,
+                Width = 670,
+                Height = 550,
+                ReadOnly = true,
+                Font = new Font("Consolas", 10F),
+                BackColor = Color.White
+            };
+
+            btnDiagnostico = new Button
+            {
+                Text = "Executar Diagnóstico",
+                Top = 10,
+                Left = 10,
+                Width = 180,
+                Height = 30,
+                FlatStyle = FlatStyle.Flat
+            };
+            btnDiagnostico.FlatAppearance.BorderSize = 0;
+            btnDiagnostico.Click += btnDiagnostico_Click;
+
+            btnCopiar = new Button
+            {
+                Text = "Copiar Resultados",
+                Top = 10,
+                Left = 200,
+                Width = 140,
+                Height = 30,
+                Enabled = false,
+                FlatStyle = FlatStyle.Flat
+            };
+            btnCopiar.FlatAppearance.BorderSize = 0;
+            btnCopiar.Click += btnCopiar_Click;
+
+            btnSalvar = new Button
+            {
+                Text = "Salvar Relatório",
+                Top = 10,
+                Left = 350,
+                Width = 140,
+                Height = 30,
+                Enabled = false,
+                FlatStyle = FlatStyle.Flat
+            };
+            btnSalvar.FlatAppearance.BorderSize = 0;
+            btnSalvar.Click += btnSalvar_Click;
+
+            saveFileDialog = new SaveFileDialog
+            {
+                Filter = "Arquivo de texto|*.txt",
+                Title = "Salvar relatório de diagnóstico"
+            };
+
+            this.Controls.Add(richTextBoxInfo);
+            this.Controls.Add(btnDiagnostico);
+            this.Controls.Add(btnCopiar);
+            this.Controls.Add(btnSalvar);
+        }
+
+        private async void btnDiagnostico_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                btnDiagnostico.Enabled = false;
+                richTextBoxInfo.Clear();
+                AppendLine("=== Iniciando diagnóstico do sistema ===\n");
+
+                bool modoTecnico = FormMain.Instance?.IsModoTecnicoAtivo ?? false;
+                AppendLine($"Modo: {(modoTecnico ? "Diagnóstico Completo" : "Diagnóstico Básico")}\n");
+
+                await Task.Run(() =>
+                {
+                    if (managementObjectSearcherType != null)
+                    {
+                        ColetarInformacoesWindows();
+                        ColetarInformacoesCPU();
+                        ColetarInformacoesRAM();
+                        ColetarInformacoesArmazenamento();
+                        
+                        // Informações avançadas apenas no modo técnico
+                        if (modoTecnico)
+                        {
+                            ColetarInformacoesRede();
+                            ColetarInformacoesAntivirus();
+                            if (serviceControllerType != null)
+                            {
+                                ColetarInformacoesServicos();
+                            }
+                        }
+                    }
+                });
+
+                AppendLine("\n=== Diagnóstico concluído ===");
+                btnCopiar.Enabled = true;
+                btnSalvar.Enabled = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao executar diagnóstico: {ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                btnDiagnostico.Enabled = true;
+            }
+        }
+
+        protected void AppendLine(string text)
+        {
+            if (richTextBoxInfo.InvokeRequired)
+            {
+                richTextBoxInfo.Invoke(new Action<string>(AppendLine), text);
+            }
+            else
+            {
+                richTextBoxInfo.AppendText(text + Environment.NewLine);
+            }
+        }
+
+        protected void ColetarInformacoesWindows()
+        {
+            AppendLine("--- Informações do Windows ---");
+            try
+            {
+                dynamic searcher = Activator.CreateInstance(managementObjectSearcherType, "SELECT * FROM Win32_OperatingSystem");
+                var items = searcher.Get();
+                foreach (dynamic item in items)
+                {
+                    AppendLine($"Sistema Operacional: {item["Caption"]}");
+                    AppendLine($"Versão: {item["Version"]}");
+                    AppendLine($"Arquitetura: {item["OSArchitecture"]}");
+                    var lastBootTime = item["LastBootUpTime"].ToString();
+                    var bootTime = ManagementDateTimeConverter(lastBootTime);
+                    AppendLine($"Último Boot: {bootTime}");
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLine($"Erro ao coletar informações do Windows: {ex.Message}");
+            }
+            AppendLine("");
+        }
+
+        private DateTime ManagementDateTimeConverter(string dmtfDate)
+        {
+            var year = int.Parse(dmtfDate.Substring(0, 4));
+            var month = int.Parse(dmtfDate.Substring(4, 2));
+            var day = int.Parse(dmtfDate.Substring(6, 2));
+            var hour = int.Parse(dmtfDate.Substring(8, 2));
+            var minute = int.Parse(dmtfDate.Substring(10, 2));
+            var second = int.Parse(dmtfDate.Substring(12, 2));
+            var microSeconds = int.Parse(dmtfDate.Substring(15, 6));
+            return new DateTime(year, month, day, hour, minute, second, microSeconds / 1000);
+        }
+
+        protected void ColetarInformacoesCPU()
+        {
+            AppendLine("--- Informações da CPU ---");
+            try
+            {
+                dynamic searcher = Activator.CreateInstance(managementObjectSearcherType, "SELECT * FROM Win32_Processor");
+                var items = searcher.Get();
+                foreach (dynamic item in items)
+                {
+                    AppendLine($"Processador: {item["Name"]}");
+                    AppendLine($"Núcleos: {item["NumberOfCores"]}");
+                    AppendLine($"Threads: {item["NumberOfLogicalProcessors"]}");
+                    AppendLine($"Velocidade: {item["MaxClockSpeed"]} MHz");
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLine($"Erro ao coletar informações da CPU: {ex.Message}");
+            }
+            AppendLine("");
+        }
+
+        protected void ColetarInformacoesRAM()
+        {
+            AppendLine("--- Informações da Memória RAM ---");
+            try
+            {
+                dynamic searcher = Activator.CreateInstance(managementObjectSearcherType, "SELECT * FROM Win32_ComputerSystem");
+                var items = searcher.Get();
+                foreach (dynamic item in items)
+                {
+                    ulong totalMemoryKB = Convert.ToUInt64(item["TotalPhysicalMemory"]) / 1024;
+                    ulong totalMemoryMB = totalMemoryKB / 1024;
+                    ulong totalMemoryGB = totalMemoryMB / 1024;
+                    AppendLine($"Memória Total: {totalMemoryGB} GB");
+                }
+
+                searcher = Activator.CreateInstance(managementObjectSearcherType, "SELECT * FROM Win32_OperatingSystem");
+                items = searcher.Get();
+                foreach (dynamic item in items)
+                {
+                    ulong freeMemoryKB = Convert.ToUInt64(item["FreePhysicalMemory"]);
+                    ulong freeMemoryMB = freeMemoryKB / 1024;
+                    ulong freeMemoryGB = freeMemoryMB / 1024;
+                    AppendLine($"Memória Livre: {freeMemoryGB} GB");
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLine($"Erro ao coletar informações da RAM: {ex.Message}");
+            }
+            AppendLine("");
+        }
+
+        protected void ColetarInformacoesArmazenamento()
+        {
+            AppendLine("--- Informações de Armazenamento ---");
+            try
+            {
+                foreach (var drive in System.IO.DriveInfo.GetDrives().Where(d => d.IsReady))
+                {
+                    AppendLine($"Unidade: {drive.Name}");
+                    AppendLine($"Rótulo: {drive.VolumeLabel}");
+                    AppendLine($"Sistema de Arquivos: {drive.DriveFormat}");
+                    AppendLine($"Espaço Total: {drive.TotalSize / 1073741824} GB");
+                    AppendLine($"Espaço Livre: {drive.AvailableFreeSpace / 1073741824} GB");
+                    AppendLine("");
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLine($"Erro ao coletar informações de armazenamento: {ex.Message}");
+            }
+            AppendLine("");
+        }
+
+        protected void ColetarInformacoesRede()
+        {
+            AppendLine("--- Informações de Rede ---");
+            try
+            {
+                dynamic searcher = Activator.CreateInstance(managementObjectSearcherType, "SELECT * FROM Win32_NetworkAdapter WHERE PhysicalAdapter=True");
+                var items = searcher.Get();
+                foreach (dynamic item in items)
+                {
+                    AppendLine($"Adaptador: {item["Name"]}");
+                    AppendLine($"Fabricante: {item["Manufacturer"]}");
+                    AppendLine($"Status: {(Convert.ToString(item["NetEnabled"]) == "True" ? "Conectado" : "Desconectado")}");
+                    AppendLine("");
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLine($"Erro ao coletar informações de rede: {ex.Message}");
+            }
+            AppendLine("");
+        }
+
+        protected void ColetarInformacoesAntivirus()
+        {
+            AppendLine("--- Informações do Antivírus ---");
+            try
+            {
+                dynamic searcher = Activator.CreateInstance(managementObjectSearcherType, new[] { @"root\SecurityCenter2", "SELECT * FROM AntivirusProduct" });
+                var items = searcher.Get();
+                bool encontrado = false;
+                foreach (dynamic item in items)
+                {
+                    encontrado = true;
+                    AppendLine($"Nome: {item["displayName"]}");
+                    AppendLine($"Estado: {(Convert.ToString(item["productState"]) == "397568" ? "Ativo" : "Inativo")}");
+                    AppendLine("");
+                }
+                if (!encontrado)
+                {
+                    AppendLine("Nenhum antivírus detectado");
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLine($"Erro ao coletar informações do antivírus: {ex.Message}");
+            }
+            AppendLine("");
+        }
+
+        protected void ColetarInformacoesServicos()
+        {
+            AppendLine("--- Serviços Importantes ---");
+            try
+            {
+                string[] servicosImportantes = { "wuauserv", "WinDefend", "wscsvc", "Spooler" };
+                foreach (var servico in servicosImportantes)
+                {
+                    try
+                    {
+                        dynamic sc = Activator.CreateInstance(serviceControllerType, new[] { servico });
+                        AppendLine($"Serviço: {sc.DisplayName}");
+                        AppendLine($"Status: {sc.Status}");
+                        AppendLine($"Tipo de Inicialização: {sc.StartType}");
+                        AppendLine("");
+                    }
+                    catch
+                    {
+                        AppendLine($"Serviço {servico} não encontrado");
+                        AppendLine("");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLine($"Erro ao coletar informações dos serviços: {ex.Message}");
+            }
+        }
+
+        private void btnCopiar_Click(object sender, EventArgs e)
+        {
+            if (!string.IsNullOrEmpty(richTextBoxInfo.Text))
+            {
+                Clipboard.SetText(richTextBoxInfo.Text);
+                MessageBox.Show("Informações copiadas para a área de transferência!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void btnSalvar_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(richTextBoxInfo.Text))
+                return;
+
+            saveFileDialog.FileName = $"Diagnostico_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    System.IO.File.WriteAllText(saveFileDialog.FileName, richTextBoxInfo.Text);
+                    MessageBox.Show("Relatório salvo com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Erro ao salvar o relatório: {ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+    }
+}
